@@ -911,6 +911,10 @@ paths:
           * 1TB以上のサイズのボリュームはイメージ保存できませんのでご注意ください
           * ボリュームがサーバにアタッチされている場合、そのサーバは停止中である必要があります
           * イメージ保存領域を超過している場合はイメージ保存を実行してもイメージは完成しません。イメージ保存領域を購入してから再実行してください。
+
+        2. スナップショットから復元
+          * スナップショットからボリュームを復元します
+          * 復元はサーバが停止中である必要があります
       operationId: block-storage/volume-actions
       security:
         - KeystoneTokenAuthentication: []
@@ -924,12 +928,14 @@ paths:
             schema:
               oneOf:
                 - $ref: '#/components/schemas/VolUploadImageReq'
+                - $ref: '#/components/schemas/RevertVolumeToSnapshotReq'
       responses:
         '202':
           description: >-
             The volume action (e.g., upload-to-image) has been accepted and is being
             processed asynchronously. Note: volumes over 1TB cannot be saved as images,
             and attached volumes require the server to be stopped.
+            If the action is revert-to-snapshot, no response body is returned.
           content:
             application/json:
               schema:
@@ -1149,6 +1155,168 @@ paths:
             type: string
           required: true
           description: The ID of the instance.
+
+  /v3/{project_id}/snapshots/detail:
+    get:
+      tags:
+        - block-storage
+      summary: スナップショット詳細一覧
+      description: |-
+        スナップショットの詳細一覧を取得します。
+      operationId: block-storage/list-snapshots-detail
+      security:
+        - KeystoneTokenAuthentication: []
+      parameters:
+        - $ref: '#/components/parameters/ProjectIdPath'
+        - in: query
+          name: sort
+          schema:
+            type: string
+          required: false
+          description: "Comma-separated list of sort keys and optional sort directions in the form of < key > [: < direction > ]. A valid direction is asc (ascending) or desc (descending)."
+        - in: query
+          name: limit
+          schema:
+            type: integer
+          required: false
+          description: Requests a page size of items. Returns a number of items up to a limit value. Use the limit parameter to make an initial limited request and use the ID of the last-seen item from the response as the marker parameter value in a subsequent limited request.
+        - in: query
+          name: offset
+          schema:
+            type: integer
+          required: false
+          description: Used in conjunction with limit to return a slice of items. offset is where to start in the list.
+        - in: query
+          name: marker
+          schema:
+            type: string
+          required: false
+          description: The ID of the last-seen item. Use the limit parameter to make an initial limited request and use the ID of the last-seen item from the response as the marker parameter value in a subsequent limited request.
+      responses:
+        '200':
+          description: Request was successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListSnapshotsDetailRes'
+        '400':
+          description: Some content in the request was invalid.
+  /v3/{project_id}/snapshots:
+    get:
+      tags:
+        - block-storage
+      summary: スナップショット一覧取得
+      description: |-
+        スナップショットの一覧を表示します
+      operationId: block-storage/list-snapshots
+      security:
+        - KeystoneTokenAuthentication: []
+      parameters:
+        - $ref: '#/components/parameters/ProjectIdPath'
+        - in: query
+          name: sort
+          schema:
+            type: string
+          required: false
+          description: "Comma-separated list of sort keys and optional sort directions in the form of < key > [: < direction > ]. A valid direction is asc (ascending) or desc (descending)."
+        - in: query
+          name: limit
+          schema:
+            type: integer
+          required: false
+          description: Requests a page size of items. Returns a number of items up to a limit value. Use the limit parameter to make an initial limited request and use the ID of the last-seen item from the response as the marker parameter value in a subsequent limited request.
+        - in: query
+          name: offset
+          schema:
+            type: integer
+          required: false
+          description: Used in conjunction with limit to return a slice of items. offset is where to start in the list.
+        - in: query
+          name: marker
+          schema:
+            type: string
+          required: false
+          description: The ID of the last-seen item. Use the limit parameter to make an initial limited request and use the ID of the last-seen item from the response as the marker parameter value in a subsequent limited request.
+      responses:
+        '200':
+          description: Request was successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListSnapshotsRes'
+        '400':
+          description: Some content in the request was invalid.
+    post:
+      tags:
+        - block-storage
+      summary: Create a snapshot
+      description: |-
+        スナップショット作成
+
+        - 1 つのみ作成可能です
+        - 24時間経過で自動削除されます
+      operationId: block-storage/create-snapshot
+      security:
+        - KeystoneTokenAuthentication: []
+      parameters:
+        - $ref: '#/components/parameters/ProjectIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSnapshotReq'
+      responses:
+        '202':
+          description: Request is accepted, but processing may take some time.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateSnapshotRes'
+        '400':
+          description: Some content in the request was invalid.  
+  /v3/{project_id}/snapshots/{snapshot_id}:
+    get:
+      tags:
+        - block-storage
+      summary: スナップショット取得
+      description: |-
+        スナップショット取得
+      operationId: block-storage/show-snapshot
+      security:
+        - KeystoneTokenAuthentication: []
+      parameters:
+        - $ref: '#/components/parameters/ProjectIdPath'
+        - $ref: '#/components/parameters/SnapshotIdPath'
+      responses:
+        '200':
+          description: Request was successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShowSnapshotRes'
+        '400':
+          description: Some content in the request was invalid.
+    delete:
+      tags:
+        - block-storage
+      summary: Deletes a snapshot
+      description: |-
+        Deletes a snapshot.
+
+        Preconditions:
+        Snapshot status must be available or error
+      operationId: block-storage/delete-snapshot
+      security:
+        - KeystoneTokenAuthentication: []
+      parameters:
+        - $ref: '#/components/parameters/ProjectIdPath'
+        - $ref: '#/components/parameters/SnapshotIdPath'
+      responses:
+        '202':
+          description: Request is accepted, but processing may take some time.
+        '400':
+          description: Some content in the request was invalid.
 
   /v2/images:
     get:
@@ -5511,6 +5679,13 @@ components:
         type: string
       required: true
       description: The UUID of the volume.
+    SnapshotIdPath:
+      in: path
+      name: snapshot_id
+      schema:
+        type: string
+      required: true
+      description: The UUID of the snapshot.
     ServerIdPath:
       in: path
       name: server_id
@@ -5894,6 +6069,19 @@ components:
               type: string
               description: "The name of the image to create."
               example: "upload-image-name"
+    RevertVolumeToSnapshotReq:
+      type: object
+      required:
+      - "revert"
+      properties:
+        revert:
+          type: object
+          required:
+          - "snapshot_id"
+          properties:
+            snapshot_id:
+              type: string
+              example: "550e8400-e29b-41d4-a716-446655440000"
     VolUploadImageRes:
       type: object
       required:
@@ -6447,6 +6635,127 @@ components:
               type: string
               description: "The name of the volume."
               example: "vol-01"
+    ListSnapshotsDetailRes:
+      type: object
+      required:
+        - "snapshots"
+      properties:
+        snapshots:
+          type: array
+          items:
+            $ref: '#/components/schemas/SnapshotDetailResBody'
+    ListSnapshotsRes:
+      type: object
+      required:
+        - "snapshots"
+      properties:
+        snapshots:
+          type: array
+          items:
+            $ref: '#/components/schemas/SnapshotResBody'
+    CreateSnapshotReq:
+      type: object
+      required:
+        - "snapshot"
+      properties:
+        snapshot:
+          type: object
+          required:
+            - "volume_id"
+            - "name"
+          properties:
+            volume_id:
+              type: string
+              example: "550e8400-e29b-41d4-a716-446655440000"
+            name:
+              type: string
+              example: "the-snapshot-name"
+            description:
+              type: string
+              example: "test snapshot"
+    SnapshotDetailResBody:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "creating"
+        os-extended-snapshot-attributes:progress:
+          type: string
+          example: "0%"
+        description:
+          type: string
+          example: "test snapshot"
+        created_at:
+          type: string
+          example: "2018-11-28T06:25:15.000000"
+        name:
+          type: string
+          example: "the-snapshot-name"
+        user_id:
+          type: string
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        volume_id:
+          type: string
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        os-extended-snapshot-attributes:project_id:
+          type: string
+          example: "0%"
+        size:
+          type: integer
+          example: 10
+        id:
+          type: string
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        updated_at:
+          type: string
+          example: "2018-11-28T06:25:15.000000"
+    SnapshotResBody:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "creating"
+        description:
+          type: string
+          example: "test snapshot"
+        created_at:
+          type: string
+          example: "2018-11-28T06:25:15.000000"
+        name:
+          type: string
+          example: "the-snapshot-name"
+        user_id:
+          type: string
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        volume_id:
+          type: string
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        os-extended-snapshot-attributes:project_id:
+          type: string
+          example: "550e8400e29b41d4a716446655440000"
+        size:
+          type: integer
+          example: 10
+        id:
+          type: string
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        updated_at:
+          type: string
+          example: "2018-11-28T06:25:15.000000"
+    CreateSnapshotRes:
+      type: object
+      required:
+        - "snapshot"
+      properties:
+        snapshot:
+          $ref: '#/components/schemas/SnapshotResBody'
+    ShowSnapshotRes:
+      type: object
+      required:
+        - "snapshot"
+      properties:
+        snapshot:
+          $ref: '#/components/schemas/SnapshotDetailResBody'
     IssueTokenResBody:
       type: "object"
       properties:
