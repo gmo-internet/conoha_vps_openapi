@@ -17,6 +17,9 @@ info:
   termsOfService: 'https://www.conoha.jp/agreement/'
   contact:
     url: https://support.conoha.jp/
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
 
 paths:
   /v3/auth/tokens:
@@ -6393,7 +6396,7 @@ components:
               default: 14
               description: バックアップの保存期間(日数). 指定がなければ14日となります. 日次バックアップの場合にのみ有効なパラメータです
               minimum: 14
-              maximm: 30
+              maximum: 30
     ApplyBackupRes:
       type: object
       required:
@@ -9941,9 +9944,9 @@ components:
         user_id:
           type: string
           description: "The unique identifier of the user."
-        project_id:
+        tenant_id:
           type: string
-          description: "The unique identifier of the project."
+          description: "The unique identifier of the tenant."
         access:
           type: string
           description: "The EC2 access key."
@@ -10169,7 +10172,7 @@ components:
     ListRolesRes:
       type: object
       required:
-        - role
+        - roles
       properties:
         roles:
           type: array
