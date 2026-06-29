@@ -968,9 +968,6 @@ paths:
         自動バックアップ申込みAPI   
         指定したinstanceに追加ボリュームがアタッチされている場合は、ブートボリュームに加えて追加ボリュームもバックアップ対象になります。
 
-        日次バックアップを申し込む場合は schedule: daily を指定してください  
-        schedule の指定がない場合、週次バックアップ申し込みとなります
-
         retention はデフォルトで 14 です  
         14 以上 30 以下の値を指定できます
       operationId: block-storage/apply-backup
@@ -6382,16 +6379,16 @@ components:
             schedule:
               type: string
               example: daily
-              default: weekly
-              description: バックアップのスケジュール頻度. 指定がなければ週次となります
+              default: daily
+              description: バックアップのスケジュール頻度. 日次バックアップのみ申し込み可能です.
               enum:
                 - daily
-                - weekly
+              deprecated: true
             retention:
               type: integer
               example: 14
               default: 14
-              description: バックアップの保存期間(日数). 指定がなければ14日となります. 日次バックアップの場合にのみ有効なパラメータです
+              description: バックアップの保存期間(日数). 指定がなければ14日となります.
               minimum: 14
               maximm: 30
     ApplyBackupRes:
