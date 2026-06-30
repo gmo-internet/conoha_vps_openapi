@@ -6699,7 +6699,7 @@ components:
           example: "550e8400-e29b-41d4-a716-446655440000"
         os-extended-snapshot-attributes:project_id:
           type: string
-          example: "0%"
+          example: "550e8400e29b41d4a716446655440000"
         size:
           type: integer
           example: 10
